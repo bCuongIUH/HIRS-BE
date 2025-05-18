@@ -1,16 +1,24 @@
-const express = require("express");
-const router = express.Router();
-const authController = require("../controllers/auth.controller");
+const express = require("express")
+const {
+  login,
+  logout,
+  getMe,
+  forgotPassword,
+  resetPassword,
+  updateDetails,
+  updatePassword,
+} = require("../controllers/auth.controller")
 
-// Public routes
-router.post("/login", authController.login);
-router.get("/logout", authController.logout);
-router.get("/me", authController.getMe);
-router.post("/forgotpassword", authController.forgotPassword);
-router.put("/resetpassword/:resettoken", authController.resetPassword);
+const router = express.Router()
 
-// Protected routes
-router.put("/updatedetails", authController.updateDetails);
-router.put("/updatepassword", authController.updatePassword);
+const { protect } = require("../middleware/auth.middleware")
 
-module.exports = router; // ✅ NHỚ export router
+router.post("/login", login)
+router.get("/logout", logout)
+router.get("/me", protect, getMe)
+router.post("/forgotpassword", forgotPassword)
+// router.put("/resetpassword/:resettoken", resetPassword)
+router.put("/updatedetails", protect, updateDetails)
+router.put("/updatepassword", protect, updatePassword)
+
+module.exports = router

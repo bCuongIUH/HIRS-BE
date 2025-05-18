@@ -5,6 +5,17 @@ const ErrorResponse = require("../utils/errorResponse")
 const crypto = require("crypto")
 const nodemailer = require("nodemailer")
 
+// Hàm tạo mật khẩu ngẫu nhiên
+const generateRandomPassword = (length = 10) => {
+  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+"
+  let password = ""
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * charset.length)
+    password += charset[randomIndex]
+  }
+  return password
+}
+
 // @desc    Đăng nhập người dùng
 // @route   POST /api/auth/login
 // @access  Public
@@ -60,8 +71,6 @@ exports.logout = asyncHandler(async (req, res, next) => {
   res.cookie("token", "none", {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true,
-    sameSite: "None",
-    secure: process.env.NODE_ENV === "production",
   })
 
   res.status(200).json({
@@ -105,92 +114,100 @@ exports.getMe = asyncHandler(async (req, res, next) => {
   })
 })
 
-// @desc    Quên mật khẩu
+// @desc    Quên mật khẩu - Tạo mật khẩu mới và gửi qua email
 // @route   POST /api/auth/forgotpassword
 // @access  Public
 exports.forgotPassword = asyncHandler(async (req, res, next) => {
+  console.log("Received forgot password request:", req.body)
+
   const user = await User.findOne({ email: req.body.email })
 
   if (!user) {
     return next(new ErrorResponse("Không tìm thấy người dùng với email này", 404))
   }
 
-  // Tạo token đặt lại mật khẩu
-  const resetToken = user.getResetPasswordToken()
+  // Tạo mật khẩu ngẫu nhiên
+  const newPassword = generateRandomPassword(12)
 
-  await user.save({ validateBeforeSave: false })
+  // Cập nhật mật khẩu mới cho người dùng
+  user.password = newPassword
+  await user.save()
 
-  // Tạo URL đặt lại mật khẩu
-  const resetUrl = `${req.protocol}://${req.get("host")}/reset-password/${resetToken}`
-
+  // Tạo nội dung email
   const message = `
-    Bạn nhận được email này vì bạn (hoặc ai đó) đã yêu cầu đặt lại mật khẩu. Vui lòng nhấp vào liên kết sau để đặt lại mật khẩu của bạn:
-    \n\n${resetUrl}\n\n
-    Liên kết này sẽ hết hạn sau 10 phút.
-    \n\n
-    Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.
+    Xin chào ${user.name},
+    
+    Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản của mình.
+    
+    Mật khẩu mới của bạn là: ${newPassword}
+    
+    Vui lòng đăng nhập với mật khẩu mới này và đổi mật khẩu ngay sau khi đăng nhập để đảm bảo an toàn.
+    
+    Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng liên hệ với quản trị viên ngay lập tức.
+    
+    Trân trọng,
+    Đội ngũ HRIS
   `
 
   try {
+    // Kiểm tra cấu hình email
+    const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com"
+    const smtpPort = process.env.SMTP_PORT || 587
+    const smtpUser = process.env.SMTP_EMAIL
+    const smtpPass = process.env.SMTP_PASSWORD
+
+    if (!smtpUser || !smtpPass) {
+      console.error("SMTP_EMAIL hoặc SMTP_PASSWORD không được cấu hình")
+      return next(new ErrorResponse("Cấu hình email chưa được thiết lập. Vui lòng liên hệ quản trị viên.", 500))
+    }
+
+    console.log("SMTP Config:", {
+      host: smtpHost,
+      port: smtpPort,
+      auth: {
+        user: smtpUser,
+        pass: "******", // Ẩn mật khẩu trong log
+      },
+    })
+
     // Tạo transporter
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.mailtrap.io",
-      port: process.env.SMTP_PORT || 2525,
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465, // true for 465, false for other ports
       auth: {
-        user: process.env.SMTP_EMAIL || "your-mailtrap-user",
-        pass: process.env.SMTP_PASSWORD || "your-mailtrap-password",
+        user: smtpUser,
+        pass: smtpPass,
       },
     })
 
     // Cấu hình email
     const mailOptions = {
-      from: `${process.env.FROM_NAME || "HRIS System"} <${process.env.FROM_EMAIL || "noreply@hris.com"}>`,
+      from: `${process.env.FROM_NAME || "HRIS System"} <${process.env.FROM_EMAIL || smtpUser}>`,
       to: user.email,
-      subject: "Đặt lại mật khẩu",
+      subject: "Mật khẩu mới cho tài khoản của bạn",
       text: message,
     }
 
+    console.log("Sending email to:", user.email)
+
     // Gửi email
     await transporter.sendMail(mailOptions)
+    console.log("Email sent successfully")
 
     res.status(200).json({
       success: true,
-      data: "Email đã được gửi",
+      data: "Mật khẩu mới đã được gửi đến email của bạn",
     })
   } catch (err) {
-    console.log(err)
-    user.resetPasswordToken = undefined
-    user.resetPasswordExpire = undefined
+    console.error("Lỗi gửi email:", err)
 
+    // Khôi phục mật khẩu cũ nếu gửi email thất bại
+    user.password = req.body.oldPassword
     await user.save({ validateBeforeSave: false })
 
-    return next(new ErrorResponse("Không thể gửi email", 500))
+    return next(new ErrorResponse(`Không thể gửi email: ${err.message}`, 500))
   }
-})
-
-// @desc    Đặt lại mật khẩu
-// @route   PUT /api/auth/resetpassword/:resettoken
-// @access  Public
-exports.resetPassword = asyncHandler(async (req, res, next) => {
-  // Lấy token từ params
-  const resetPasswordToken = crypto.createHash("sha256").update(req.params.resettoken).digest("hex")
-
-  const user = await User.findOne({
-    resetPasswordToken,
-    resetPasswordExpire: { $gt: Date.now() },
-  })
-
-  if (!user) {
-    return next(new ErrorResponse("Token không hợp lệ hoặc đã hết hạn", 400))
-  }
-
-  // Đặt mật khẩu mới
-  user.password = req.body.password
-  user.resetPasswordToken = undefined
-  user.resetPasswordExpire = undefined
-  await user.save()
-
-  sendTokenResponse(user, 200, res)
 })
 
 // @desc    Cập nhật thông tin người dùng
@@ -240,8 +257,11 @@ const sendTokenResponse = (user, statusCode, res, employeeData = null) => {
   const options = {
     expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000),
     httpOnly: true,
-    sameSite: "None", // Cần thiết cho cross-site requests
-    secure: process.env.NODE_ENV === "production", // Sử dụng secure trong production
+  }
+
+  // Bảo mật cookie trong production
+  if (process.env.NODE_ENV === "production") {
+    options.secure = true
   }
 
   // Loại bỏ mật khẩu từ response
