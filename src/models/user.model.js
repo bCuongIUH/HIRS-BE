@@ -2,6 +2,7 @@ const mongoose = require("mongoose")
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 const crypto = require("crypto")
+const { type } = require("os")
 
 const UserSchema = new mongoose.Schema(
   {
@@ -36,6 +37,11 @@ const UserSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    isDelete :{
+      type : String,
+      default: "false",
+      enum: ["true", "false"],
+    }
   },
   {
     toJSON: { virtuals: true },

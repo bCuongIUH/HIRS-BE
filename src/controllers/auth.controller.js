@@ -146,7 +146,7 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
     Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng liên hệ với quản trị viên ngay lập tức.
     
     Trân trọng,
-    Đội ngũ HRIS
+    Đội ngũ KT.BookStore
   `
 
   try {

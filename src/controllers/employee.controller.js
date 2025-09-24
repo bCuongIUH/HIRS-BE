@@ -8,8 +8,17 @@ const ErrorResponse = require("../utils/errorResponse")
 // @route   GET /api/employees
 // @access  Private
 exports.getEmployees = asyncHandler(async (req, res, next) => {
-  res.status(200).json(res.advancedResults)
+  const employees = await Employee.find({ employmentStatus: "active" })
+    .populate("user", "name email")
+    .populate("department", "name")
+
+  res.status(200).json({
+    success: true,
+    count: employees.length,
+    data: employees,
+  })
 })
+
 
 // @desc    Lấy một nhân viên
 // @route   GET /api/employees/:id
@@ -38,7 +47,8 @@ exports.createEmployee = asyncHandler(async (req, res, next) => {
     user = await User.create({
       name: `${req.body.firstName} ${req.body.lastName}`,
       email: req.body.email,
-      password: req.body.password || Math.random().toString(36).slice(-8), // Tạo mật khẩu ngẫu nhiên nếu không cung cấp
+      // password: req.body.password || Math.random().toString(36).slice(-8), // Tạo mật khẩu ngẫu nhiên nếu không cung cấp
+      password: req.body.password || "bookstore", // Mật khẩu mặc định
       role: req.body.role || "employee",
     })
 
@@ -84,7 +94,7 @@ exports.createEmployee = asyncHandler(async (req, res, next) => {
     details: {
       employeeId: employee.employeeId,
       name: `${employee.firstName} ${employee.lastName}`,
-      position: employee.position,
+      // position: employee.position,
       department: employee.department,
     },
   })

@@ -48,10 +48,10 @@ const employeeSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Department",
     },
-    position: {
-      type: String,
-      required: true,
-    },
+    // position: {
+    //   type: String,
+    //   required: true,
+    // },
     joinDate: {
       type: Date,
       required: true,
@@ -65,21 +65,21 @@ const employeeSchema = new mongoose.Schema(
     terminationDate: {
       type: Date,
     },
-    salary: {
-      baseSalary: {
-        type: Number,
-        required: true,
-      },
-      allowances: [
-        {
-          name: String,
-          amount: Number,
-        },
-      ],
-      bankName: String,
-      bankAccountNumber: String,
-      bankAccountName: String,
-    },
+    // salary: {
+    //   baseSalary: {
+    //     type: Number,
+    //     required: true,
+    //   },
+    //   allowances: [
+    //     {
+    //       name: String,
+    //       amount: Number,
+    //     },
+    //   ],
+    //   bankName: String,
+    //   bankAccountNumber: String,
+    //   bankAccountName: String,
+    // },
     emergencyContact: {
       name: String,
       relationship: String,
