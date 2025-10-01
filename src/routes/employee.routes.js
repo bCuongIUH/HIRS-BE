@@ -5,7 +5,6 @@ const {
   createEmployee,
   updateEmployee,
   deleteEmployee,
-  getEmployeesByDepartment,
 } = require("../controllers/employee.controller")
 
 const Employee = require("../models/employee.model")
@@ -18,15 +17,12 @@ const { protect, authorize } = require("../middleware/auth.middleware")
 // Áp dụng middleware bảo vệ cho tất cả các routes
 router.use(protect)
 
-// Route để lấy nhân viên theo phòng ban
-router.get("/department/:departmentId", getEmployeesByDepartment)
 
 router
   .route("/")
   .get(
     advancedResults(Employee, [
       { path: "user", select: "name email" },
-      { path: "department", select: "name" },
     ]),
     getEmployees,
   )

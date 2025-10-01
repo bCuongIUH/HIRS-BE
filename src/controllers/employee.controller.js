@@ -8,9 +8,8 @@ const ErrorResponse = require("../utils/errorResponse")
 // @route   GET /api/employees
 // @access  Private
 exports.getEmployees = asyncHandler(async (req, res, next) => {
-  const employees = await Employee.find({ employmentStatus: "active" })
+  const employees = await Employee.find()
     .populate("user", "name email")
-    .populate("department", "name")
 
   res.status(200).json({
     success: true,
@@ -24,7 +23,7 @@ exports.getEmployees = asyncHandler(async (req, res, next) => {
 // @route   GET /api/employees/:id
 // @access  Private
 exports.getEmployee = asyncHandler(async (req, res, next) => {
-  const employee = await Employee.findById(req.params.id).populate("user", "name email").populate("department", "name")
+  const employee = await Employee.findById(req.params.id).populate("user", "name email")
 
   if (!employee) {
     return next(new ErrorResponse(`Không tìm thấy nhân viên với ID: ${req.params.id}`, 404))
@@ -42,20 +41,19 @@ exports.getEmployee = asyncHandler(async (req, res, next) => {
 exports.createEmployee = asyncHandler(async (req, res, next) => {
   // Kiểm tra xem đã có user chưa
   let user = null
+
   if (req.body.email) {
-    // Tạo user mới nếu cung cấp email
+    // Tạo user mới nếu có email
     user = await User.create({
       name: `${req.body.firstName} ${req.body.lastName}`,
       email: req.body.email,
-      // password: req.body.password || Math.random().toString(36).slice(-8), // Tạo mật khẩu ngẫu nhiên nếu không cung cấp
       password: req.body.password || "bookstore", // Mật khẩu mặc định
-      role: req.body.role || "employee",
+      role: req.body.role || "employee", 
     })
 
-    // Thêm user ID vào dữ liệu nhân viên
     req.body.user = user._id
   } else if (req.body.userId) {
-    // Sử dụng user ID hiện có nếu được cung cấp
+    // Nếu đã có user sẵn
     user = await User.findById(req.body.userId)
     if (!user) {
       return next(new ErrorResponse(`Không tìm thấy người dùng với ID: ${req.body.userId}`, 404))
@@ -65,25 +63,39 @@ exports.createEmployee = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse("Vui lòng cung cấp email hoặc userId", 400))
   }
 
-  // Tạo mã nhân viên nếu không được cung cấp
+  // Tạo mã nhân viên tự động nếu chưa có
   if (!req.body.employeeId) {
     const count = await Employee.countDocuments()
     req.body.employeeId = `NV${(count + 1).toString().padStart(3, "0")}`
   }
 
-  // Thêm avatar mặc định nếu không được cung cấp
+  // Thêm avatar mặc định nếu không có
   if (!req.body.avatar) {
     req.body.avatar = "/images/default-avatar.png"
   }
 
-  // Thêm trạng thái mặc định nếu không được cung cấp
+  // Trạng thái mặc định
   if (!req.body.employmentStatus) {
     req.body.employmentStatus = "active"
   }
 
-  const employee = await Employee.create(req.body)
+  // ✳️ Chỉ lấy những trường cần thiết
+  const employeeData = {
+    user: req.body.user,
+    employeeId: req.body.employeeId,
+    firstName: req.body.firstName,
+    lastName: req.body.lastName,
+    gender: req.body.gender,
+    dateOfBirth: req.body.dateOfBirth,
+    phone: req.body.phone,
+    avatar: req.body.avatar,
+    employmentStatus: req.body.employmentStatus,
+  }
 
-  // Tạo transaction/thông báo
+  // Tạo nhân viên
+  const employee = await Employee.create(employeeData)
+
+  // Ghi log / transaction
   await Transaction.create({
     user: req.user.id,
     action: "create",
@@ -94,8 +106,6 @@ exports.createEmployee = asyncHandler(async (req, res, next) => {
     details: {
       employeeId: employee.employeeId,
       name: `${employee.firstName} ${employee.lastName}`,
-      // position: employee.position,
-      department: employee.department,
     },
   })
 
@@ -164,49 +174,43 @@ exports.deleteEmployee = asyncHandler(async (req, res, next) => {
   if (!employee) {
     return next(new ErrorResponse(`Không tìm thấy nhân viên với ID: ${req.params.id}`, 404))
   }
-
-  // Lưu thông tin nhân viên trước khi xóa để tạo transaction
-  const employeeInfo = {
-    id: employee._id,
-    employeeId: employee.employeeId,
-    name: `${employee.firstName} ${employee.lastName}`,
-    position: employee.position,
-    department: employee.department,
+    // ✅ Không cho quản lý xóa admin hoặc quản lý khác
+  if (req.user.role === "admin" && ["admin", "manager"].includes(employee.role)) {
+    return next(
+      new ErrorResponse("Bạn không có quyền cho nghỉ việc người có vai trò quản lý hoặc admin", 403)
+    )
   }
 
-  // Xóa user liên kết nếu cần
-  if (req.body.deleteUser) {
-    await User.findByIdAndDelete(employee.user)
+  // Nếu nhân viên đã nghỉ việc thì không cần cập nhật nữa
+  if (employee.status === "nghi_viec") {
+    return next(new ErrorResponse("Nhân viên này đã nghỉ việc trước đó", 400))
   }
 
-  await employee.deleteOne()
+  // ✅ Chuyển trạng thái sang nghỉ việc thay vì xóa
+  employee.employmentStatus = "nghi_viec"
+  await employee.save()
 
-  // Tạo transaction/thông báo
+  // ✅ Ghi lại transaction (nhật ký)
   await Transaction.create({
     user: req.user.id,
-    action: "delete",
+    action: "update",
     module: "employee",
-    description: `Đã xóa nhân viên: ${employeeInfo.name}`,
-    details: employeeInfo,
+    description: `Đã chuyển nhân viên ${employee.firstName} ${employee.lastName} sang trạng thái nghỉ việc`,
+    details: {
+      id: employee._id,
+      name: `${employee.firstName} ${employee.lastName}`,
+      position: employee.position,
+      department: employee.department,
+      status: employee.status,
+    },
   })
 
   res.status(200).json({
     success: true,
-    data: {},
+    message: `Nhân viên ${employee.firstName} ${employee.lastName} đã được chuyển sang trạng thái nghỉ việc`,
+    data: employee,
   })
 })
 
-// @desc    Lấy nhân viên theo phòng ban
-// @route   GET /api/employees/department/:departmentId
-// @access  Private
-exports.getEmployeesByDepartment = asyncHandler(async (req, res, next) => {
-  const employees = await Employee.find({ department: req.params.departmentId })
-    .populate("user", "name email")
-    .populate("department", "name")
 
-  res.status(200).json({
-    success: true,
-    count: employees.length,
-    data: employees,
-  })
-})
+
