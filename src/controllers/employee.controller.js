@@ -85,11 +85,13 @@ exports.createEmployee = asyncHandler(async (req, res, next) => {
     employeeId: req.body.employeeId,
     firstName: req.body.firstName,
     lastName: req.body.lastName,
+     email: req.body.email,
     gender: req.body.gender,
     dateOfBirth: req.body.dateOfBirth,
     phone: req.body.phone,
     avatar: req.body.avatar,
     employmentStatus: req.body.employmentStatus,
+    role: req.body.role || "employee",
   }
 
   // Tạo nhân viên

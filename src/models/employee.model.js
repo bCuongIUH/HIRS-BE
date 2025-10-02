@@ -104,7 +104,11 @@ const EmployeeSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-
+    email: {
+      type: String,
+      required: [true, "Vui lòng nhập email"],
+      trim: true,
+    },
     // 🔹 Mã nhân viên
     employeeId: {
       type: String,
