@@ -5,6 +5,7 @@ const {
   createEmployee,
   updateEmployee,
   deleteEmployee,
+
 } = require("../controllers/employee.controller")
 
 const Employee = require("../models/employee.model")
@@ -33,5 +34,6 @@ router
   .get(getEmployee)
   .put(authorize("admin", "hr"), updateEmployee)
   .delete(authorize("admin"), deleteEmployee)
+
 
 module.exports = router

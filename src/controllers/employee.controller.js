@@ -214,5 +214,19 @@ exports.deleteEmployee = asyncHandler(async (req, res, next) => {
   })
 })
 
+// Lấy thông tin nhân viên theo userId
+exports.getEmployeeByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const employee = await Employee.findOne({ user: userId });
 
+    if (!employee) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy nhân viên cho user này." });
+    }
 
+    res.status(200).json({ success: true, data: employee });
+  } catch (error) {
+    console.error("Lỗi khi lấy thông tin nhân viên:", error);
+    res.status(500).json({ success: false, message: "Lỗi server.", error: error.message });
+  }
+};
