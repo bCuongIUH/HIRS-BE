@@ -25,6 +25,12 @@ const bookSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  //test
+  stock: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
   publishYear: {
     type: Number,
   },

@@ -9,16 +9,12 @@ const warehouseSchema = new mongoose.Schema({
   },
   enteredBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Employee", 
+    ref: "Employee", // hoặc User nếu bạn dùng user làm người nhập
     required: true,
   },
   date: {
     type: Date,
     default: Date.now,
-  },
-  supplier: {
-    type: String,
-    required: true,
   },
   content: [
     {
@@ -50,27 +46,43 @@ const warehouseSchema = new mongoose.Schema({
   },
 });
 
-// Tự động tính tổng tiền phiếu nhập
+// ✅ Tự động tính tổng tiền phiếu nhập
 warehouseSchema.pre("save", function (next) {
   this.totalAmount = this.content.reduce((sum, item) => sum + item.total, 0);
   next();
 });
-warehouseSchema.pre("save", async function (next) {
-  if (!this.code) {
-    const count = await mongoose.model("Warehouse").countDocuments();
-    this.code = `PNK${(count + 1).toString().padStart(4, "0")}`;
-  }
-  next();
-});
 
-//test số lượng vào kho
+// ✅ Sau khi lưu, cập nhật số lượng tồn kho cho từng sách
 warehouseSchema.post("save", async function (doc) {
   const Book = mongoose.model("Book");
   for (const item of doc.content) {
-    await Book.findByIdAndUpdate(item.book, {
-      $inc: { stock: item.quantity },
-    });
+    await Book.findByIdAndUpdate(item.book, { $inc: { stock: item.quantity } });
   }
 });
+// ✅ Tự động sinh mã phiếu nhập (VD: PNK20251015-001)
+warehouseSchema.pre("validate", async function (next) {
+  if (!this.code) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    const dateCode = `${yyyy}${mm}${dd}`;
 
+    const Warehouse = mongoose.model("Warehouse");
+
+    // Tìm phiếu nhập cuối cùng trong ngày hôm nay
+    const lastEntry = await Warehouse.findOne({
+      code: { $regex: `^PNK${dateCode}-` },
+    }).sort({ code: -1 });
+
+    let nextNumber = 1;
+    if (lastEntry) {
+      const lastNumber = parseInt(lastEntry.code.split("-")[1]);
+      nextNumber = lastNumber + 1;
+    }
+
+    this.code = `PNK${dateCode}-${String(nextNumber).padStart(3, "0")}`;
+  }
+  next();
+});
 module.exports = mongoose.model("Warehouse", warehouseSchema);
