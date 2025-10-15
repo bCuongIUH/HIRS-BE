@@ -4,7 +4,7 @@ const cloudinary = require("../config/cloudinary");
 
 exports.createBook = async (req, res) => {
   try {
-    const { title, author, ISSN, category, price, publishYear, pages, description } = req.body;
+    const { title, author, ISSN, category, price, publishYear, pages, description ,volume} = req.body;
 
     // Kiểm tra thể loại tồn tại
     const categoryExists = await Category.findById(category);
@@ -32,6 +32,7 @@ exports.createBook = async (req, res) => {
       pages,
       description,
       coverImage: imageUrl,
+      volume: volume || null,
       isDelete: false, 
     });
 

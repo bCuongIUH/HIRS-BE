@@ -37,7 +37,11 @@ const bookSchema = new mongoose.Schema({
   description: {
     type: String,
   },
-  isDelete : {
+  volume: {
+    type: String, // Có thể để Number nếu bạn muốn
+    default: null, // Sách không có tập thì để null
+  },
+  isDelete: {
     type: Boolean,
     default: false,
   },
