@@ -27,11 +27,16 @@ const CustomerSchema = new mongoose.Schema(
     birthday: {
       type: Date,
     },
-    address: [
-      {
-        type: String,
-      },
-    ],
+   address: {
+      type: [
+        {
+          address: { type: String, required: true },
+          isDeleted: { type: Boolean, default: false }
+        }
+      ],
+      default: []
+    },
+
     createdAt: {
       type: Date,
       default: Date.now,

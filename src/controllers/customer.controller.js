@@ -98,3 +98,84 @@ const sendTokenResponse = (user, statusCode, res, customer) => {
     customer,
   });
 };
+
+// ======================
+// THÊM ĐỊA CHỈ MỚI
+// ======================
+exports.addAddress = async (req, res) => {
+  try {
+    const { customerId, address } = req.body
+    const customer = await Customer.findById(customerId)
+    if (!customer) return res.status(404).json({ success: false, message: "Không tìm thấy khách hàng" })
+
+    customer.address.push({ address, isDeleted: false })
+    await customer.save()
+
+    return res.status(200).json({ success: true, message: "Đã thêm địa chỉ", addresses: customer.address })
+  } catch (error) {
+    console.error(error)
+    return res.status(500).json({ success: false, message: "Lỗi server", error: error.message })
+  }
+}
+
+// ======================
+// LẤY DANH SÁCH ĐỊA CHỈ KHÔNG ẨN
+// ======================
+exports.getActiveAddresses = async (req, res) => {
+  try {
+    const { customerId } = req.params
+    const customer = await Customer.findById(customerId)
+    if (!customer) return res.status(404).json({ success: false, message: "Không tìm thấy khách hàng" })
+
+    const activeAddresses = customer.address.filter(addr => !addr.isDeleted)
+    return res.status(200).json({ success: true, addresses: activeAddresses })
+  } catch (error) {
+    console.error(error)
+    return res.status(500).json({ success: false, message: "Lỗi server", error: error.message })
+  }
+}
+
+// ======================
+// CẬP NHẬT ĐỊA CHỈ
+// ======================
+exports.updateAddress = async (req, res) => {
+  try {
+    const { customerId, index, newAddress } = req.body
+    const customer = await Customer.findById(customerId)
+    if (!customer) return res.status(404).json({ success: false, message: "Không tìm thấy khách hàng" })
+
+    if (index < 0 || index >= customer.address.length)
+      return res.status(400).json({ success: false, message: "Index không hợp lệ" })
+
+    customer.address[index].address = newAddress
+    await customer.save()
+
+    return res.status(200).json({ success: true, message: "Đã cập nhật địa chỉ", addresses: customer.address })
+  } catch (error) {
+    console.error(error)
+    return res.status(500).json({ success: false, message: "Lỗi server", error: error.message })
+  }
+}
+
+// ======================
+// XÓA ĐỊA CHỈ (SOFT DELETE)
+// ======================
+exports.softDeleteAddress = async (req, res) => {
+  try {
+    const { customerId, index } = req.body
+    const customer = await Customer.findById(customerId)
+    if (!customer) return res.status(404).json({ success: false, message: "Không tìm thấy khách hàng" })
+
+    if (index < 0 || index >= customer.address.length)
+      return res.status(400).json({ success: false, message: "Index không hợp lệ" })
+
+    // Soft delete
+    customer.address[index].isDeleted = true
+    await customer.save()
+
+    return res.status(200).json({ success: true, message: "Đã ẩn địa chỉ thành công", addresses: customer.address })
+  } catch (error) {
+    console.error(error)
+    return res.status(500).json({ success: false, message: "Lỗi server", error: error.message })
+  }
+}
