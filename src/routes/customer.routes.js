@@ -1,19 +1,13 @@
-const express = require("express")
-const router = express.Router()
+const express = require("express");
+const router = express.Router();
 const {
-  registerCustomer,
+  sendOtpForRegistration,
+  verifyOtpAndRegister,
   loginCustomer,
-  getCustomers,
-  getCustomer,
-} = require("../controllers/customer.controller")
-const { protect } = require("../middleware/auth.middleware")
+} = require("../controllers/customer.controller");
 
-// Đăng ký + đăng nhập
-router.post("/register", registerCustomer)
-router.post("/login", loginCustomer)
+router.post("/send-otp", sendOtpForRegistration);      // Bước 1: gửi OTP
+router.post("/verify-otp", verifyOtpAndRegister);       // Bước 2: xác thực OTP
+router.post("/login", loginCustomer);                  // Đăng nhập
 
-// Quản lý khách hàng (yêu cầu đăng nhập admin/hr)
-router.get("/", protect, getCustomers)
-router.get("/:id", protect, getCustomer)
-
-module.exports = router
+module.exports = router;
