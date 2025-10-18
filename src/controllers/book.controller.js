@@ -60,6 +60,35 @@ exports.getBooks = async (req, res) => {
   }
 };
 
+exports.getBookById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 🔎 Tìm sách theo ID, chỉ lấy sách chưa bị xóa
+    const book = await Book.findOne({ _id: id, isDelete: false })
+      .populate("category", "name");
+
+    if (!book) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy sách hoặc sách đã bị xóa.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: book,
+    });
+  } catch (error) {
+    console.error("Lỗi khi lấy sách theo ID:", error);
+    res.status(500).json({
+      success: false,
+      message: "Đã xảy ra lỗi khi lấy thông tin sách.",
+      error: error.message,
+    });
+  }
+};
+
 exports.deleteBook = async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);

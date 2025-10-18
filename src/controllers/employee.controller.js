@@ -47,6 +47,7 @@ exports.createEmployee = asyncHandler(async (req, res, next) => {
     user = await User.create({
       name: `${req.body.firstName} ${req.body.lastName}`,
       email: req.body.email,
+       phone: req.body.phone,
       password: req.body.password || "bookstore", // Mật khẩu mặc định
       role: req.body.role || "employee", 
     })

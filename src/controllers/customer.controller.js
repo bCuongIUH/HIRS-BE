@@ -58,7 +58,7 @@ exports.verifyOtpAndRegister = asyncHandler(async (req, res, next) => {
 
   const { fullName, phone, password } = otpRecord.meta;
 
-  const user = await User.create({ name: fullName, email, password, role: "customer" });
+  const user = await User.create({ name: fullName, email, password, role: "customer" , phone});
   const customer = await Customer.create({ user: user._id, fullName, email, phone });
 
   otpRecord.verified = true;
@@ -94,7 +94,7 @@ const sendTokenResponse = (user, statusCode, res, customer) => {
   res.status(statusCode).json({
     success: true,
     token,
-    user: { id: user._id, name: user.name, email: user.email, role: user.role },
+    user: { id: user._id, name: user.name, email: user.email, role: user.role, phone: user.phone },
     customer,
   });
 };
@@ -177,5 +177,19 @@ exports.softDeleteAddress = async (req, res) => {
   } catch (error) {
     console.error(error)
     return res.status(500).json({ success: false, message: "Lỗi server", error: error.message })
+  }
+}
+// 🔹 Lấy customer theo userId
+exports.getCustomerByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params
+    const customer = await Customer.findOne({ user: userId, isActive: true })
+    if (!customer) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy khách hàng" })
+    }
+    res.status(200).json({ success: true, data: customer })
+  } catch (error) {
+    console.error("Lỗi khi lấy customer:", error)
+    res.status(500).json({ success: false, message: "Lỗi server" })
   }
 }

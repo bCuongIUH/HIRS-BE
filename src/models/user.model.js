@@ -16,6 +16,10 @@ const UserSchema = new mongoose.Schema(
       unique: true,
       match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, "Vui lòng nhập email hợp lệ"],
     },
+     phone: {
+    type: String,
+    required: [true, "Vui lòng nhập số điện thoại"], // ✅ Thêm dòng này
+  },
     role: {
       type: String,
       enum: ["admin", "customer", "employee"],

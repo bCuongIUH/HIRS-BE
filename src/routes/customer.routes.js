@@ -8,6 +8,7 @@ const {
   getActiveAddresses,
   updateAddress,
   softDeleteAddress,
+  getCustomerByUserId,
 } = require("../controllers/customer.controller");
 
 router.post("/send-otp", sendOtpForRegistration);      // Bước 1: gửi OTP
@@ -17,12 +18,13 @@ router.post("/login", loginCustomer);                  // Đăng nhập
 router.post("/add-address", addAddress)
 
 // 🔹 Lấy danh sách địa chỉ chưa bị ẩn
-router.get("/:customerId/addresses",getActiveAddresses)
+router.get("/addresses/:customerId",getActiveAddresses)
 
 // 🔹 Cập nhật địa chỉ
 router.put("/update-address", updateAddress)
 
 // 🔹 Xóa địa chỉ (soft delete)
 router.put("/soft-delete-address", softDeleteAddress)
-
+//lấy customer theo id của user 
+router.get("/user/:userId", getCustomerByUserId)
 module.exports = router;
