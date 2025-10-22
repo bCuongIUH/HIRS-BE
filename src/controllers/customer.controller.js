@@ -102,23 +102,49 @@ const sendTokenResponse = (user, statusCode, res, customer) => {
 // ======================
 // THÊM ĐỊA CHỈ MỚI
 // ======================
+// exports.addAddress = async (req, res) => {
+//   try {
+    
+//     const { customerId, street, ward, district, city } = req.body
+//     const customer = await Customer.findById(customerId)
+  
+//     if (!customer)
+//       return res.status(404).json({ success: false, message: "Không tìm thấy khách hàng" })
+//  console.log('Dữ liệu nhận từ client:', req.body);
+//     customer.address.push({ street, ward, district, city })
+//     await customer.save()
+
+//     res.status(200).json({ success: true, message: "Đã thêm địa chỉ", addresses: customer.address })
+//   } catch (error) {
+//     console.error(error)
+//     res.status(500).json({ success: false, message: "Lỗi server", error: error.message })
+//   }
+// }
+
 exports.addAddress = async (req, res) => {
   try {
-    const { customerId, street, ward, district, city } = req.body
-    const customer = await Customer.findById(customerId)
+    const { customerId, street, ward, district, city } = req.body;
+
+    // Kiểm tra nếu có trường nào thiếu
+    if (!street || !ward || !district || !city) {
+      return res.status(400).json({ success: false, message: "Vui lòng điền đầy đủ thông tin địa chỉ" });
+    }
+
+    const customer = await Customer.findById(customerId);
+
     if (!customer)
-      return res.status(404).json({ success: false, message: "Không tìm thấy khách hàng" })
+      return res.status(404).json({ success: false, message: "Không tìm thấy khách hàng" });
 
-    customer.address.push({ street, ward, district, city })
-    await customer.save()
+    // Thêm địa chỉ mới vào mảng địa chỉ của khách hàng
+    customer.address.push({ street, ward, district, city });
+    await customer.save();
 
-    res.status(200).json({ success: true, message: "Đã thêm địa chỉ", addresses: customer.address })
+    res.status(200).json({ success: true, message: "Đã thêm địa chỉ", addresses: customer.address });
   } catch (error) {
-    console.error(error)
-    res.status(500).json({ success: false, message: "Lỗi server", error: error.message })
+    console.error(error);
+    res.status(500).json({ success: false, message: "Lỗi server", error: error.message });
   }
-}
-
+};
 
 // ======================
 // LẤY DANH SÁCH ĐỊA CHỈ KHÔNG ẨN
