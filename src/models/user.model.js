@@ -18,7 +18,7 @@ const UserSchema = new mongoose.Schema(
     },
      phone: {
     type: String,
-    required: [true, "Vui lòng nhập số điện thoại"], // ✅ Thêm dòng này
+    required: false,
   },
     role: {
       type: String,

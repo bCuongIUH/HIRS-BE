@@ -27,15 +27,27 @@ const CustomerSchema = new mongoose.Schema(
     birthday: {
       type: Date,
     },
-   address: {
-      type: [
-        {
-          address: { type: String, required: true },
-          isDeleted: { type: Boolean, default: false }
-        }
-      ],
-      default: []
+  //  address: {
+  //     type: [
+  //       {
+  //         address: { type: String, required: true },
+  //         isDeleted: { type: Boolean, default: false }
+  //       }
+  //     ],
+  //     default: []
+  //   },
+address: {
+  type: [
+    {
+      street: { type: String, required: [true, "Vui lòng nhập tên đường/số nhà"] },
+      ward: { type: String, required: [true, "Vui lòng nhập phường/xã"] },
+      district: { type: String, required: [true, "Vui lòng nhập quận/huyện"] },
+      city: { type: String, required: [true, "Vui lòng nhập tỉnh/thành phố"] },
+      isDeleted: { type: Boolean, default: false },
     },
+  ],
+  default: [],
+},
 
     createdAt: {
       type: Date,
