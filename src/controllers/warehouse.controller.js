@@ -49,19 +49,36 @@ exports.createWarehouseEntry = async (req, res) => {
 // 📋 Lấy tất cả phiếu nhập
 exports.getAllWarehouses = async (req, res) => {
   try {
-    const warehouses = await Warehouse.find()
-      .populate("enteredBy", "name")
-      .populate("content.book", "title author ISSN")
-      .sort({ date: -1 });
+    const data = await Warehouse.find()
+      .populate({
+        path: "enteredBy",
+        select: "firstName lastName email phone avatar",
+      })
+      .populate({
+        path: "content.book",
+        select: "title author ISSN",
+      })
 
-    res.json({ success: true, data: warehouses });
+    const formatted = data.map(item => ({
+      id: item._id,
+      code: item.code,
+      date: item.date,
+      enteredBy:
+        item.enteredBy
+          ? `${item.enteredBy.lastName} ${item.enteredBy.firstName}`
+          : "Không xác định",
+      totalAmount: item.totalAmount,
+      totalBooks: item.content.length,
+      content: item.content,
+    }))
+
+    res.json({ success: true, data: formatted })
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Lỗi khi lấy danh sách phiếu nhập.",
-    });
+    console.error(error)
+    res.status(500).json({ success: false, message: "Lỗi server!" })
   }
-};
+}
+
 
 // 🔍 Lấy chi tiết phiếu nhập theo ID
 exports.getWarehouseById = async (req, res) => {
