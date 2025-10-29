@@ -25,6 +25,12 @@ const bookSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  //   discount: {
+  //   type: Number,
+  //   default: 0,
+  //   min: 0,
+  
+  // },
   //test
   stock: {
     type: Number,
@@ -44,8 +50,8 @@ const bookSchema = new mongoose.Schema({
     type: String,
   },
   volume: {
-    type: String, // Có thể để Number nếu bạn muốn
-    default: null, // Sách không có tập thì để null
+    type: String, 
+    default: null,
   },
   isDelete: {
     type: Boolean,

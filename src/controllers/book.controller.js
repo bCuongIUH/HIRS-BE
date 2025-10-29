@@ -31,6 +31,7 @@ exports.createBook = async (req, res) => {
       publishYear,
       pages,
       description,
+      // discount: 0,
       coverImage: imageUrl,
       volume: volume || null,
       isDelete: false, 
