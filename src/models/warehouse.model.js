@@ -23,6 +23,10 @@ const warehouseSchema = new mongoose.Schema({
         ref: "Book",
         required: true,
       },
+      volume: {
+        type: String, 
+        default: null,
+      },
       quantity: {
         type: Number,
         required: true,

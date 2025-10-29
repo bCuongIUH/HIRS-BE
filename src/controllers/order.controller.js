@@ -140,3 +140,63 @@ exports.getOrderByCode = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// PUT /api/orders/:id/status
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const statusFlow = [
+      "pending",
+      "processing",
+      "shipping",
+      "delivered",
+      "yeu_cau_hoan_tra",
+    ]
+
+    // Lấy đơn hàng
+    const order = await Order.findById(id)
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy đơn hàng!",
+      })
+    }
+
+    const currentStatus = order.status
+    const currentIndex = statusFlow.indexOf(currentStatus)
+
+    if (currentIndex === -1) {
+      return res.status(400).json({
+        success: false,
+        message: "Trạng thái đơn hàng không hợp lệ!",
+      })
+    }
+
+    if (currentIndex === statusFlow.length - 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Trạng thái đã ở mức cuối cùng, không thể cập nhật!",
+      })
+    }
+
+    // Cập nhật sang trạng thái tiếp theo
+    const nextStatus = statusFlow[currentIndex + 1]
+    order.status = nextStatus
+    await order.save()
+
+    return res.status(200).json({
+      success: true,
+      message: "Cập nhật trạng thái thành công!",
+      status: nextStatus,
+      order,
+    })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi server!",
+      error: err.message,
+    })
+  }
+}
