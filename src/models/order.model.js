@@ -19,13 +19,14 @@ const OrderSchema = new mongoose.Schema(
       {
         productId: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "Book", // hoặc "Product" tùy project
+          ref: "Book",
           required: true,
         },
         title: { type: String, required: true },
         price: { type: Number, required: true },
         quantity: { type: Number, required: true },
         total: { type: Number, required: true }, // price * quantity
+        image: { type: String, default: null },
       },
     ],
 

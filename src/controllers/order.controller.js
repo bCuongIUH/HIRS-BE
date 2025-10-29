@@ -32,7 +32,7 @@ exports.createOrder = async (req, res) => {
       price: item.price,
       quantity: item.quantity,
       total: item.price * item.quantity,
-      image: item.image || null,
+     image: item.image || Book?.coverImage || null, 
     }))
 
     // Tạo đơn hàng
