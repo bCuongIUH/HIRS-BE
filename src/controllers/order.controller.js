@@ -254,13 +254,21 @@ exports.createOrderAndVNPayUrl = async (req, res) => {
       const tmnCode = process.env.VNP_TMNCODE;
       const secretKey = process.env.VNP_HASHSECRET;
       const vnpUrl = process.env.VNP_URL;
-      const returnUrl = process.env.VNP_RETURNURL; // Không encode ở đây, encode khi tạo query string
-
+      const returnUrl = process.env.VNP_RETURNURL;
+      const ipnUrl = process.env.VNP_IPNURL;
       const date = new Date();
       const createDate = dateFormat(date, "yyyymmddHHMMss");
-      const orderId = orderCode; // dùng orderCode làm reference
+      const orderId = orderCode; 
 
       // 1. Tham số raw để tạo chữ ký
+     let ipAddr = req.ip || req.connection.remoteAddress || "127.0.0.1";
+      if (ipAddr.startsWith("::ffff:")) {
+        ipAddr = ipAddr.replace("::ffff:", "");
+      }
+      if (ipAddr === "::1") {
+        ipAddr = "127.0.0.1";
+      }
+
       let vnp_Params = {
         vnp_Version: "2.1.0",
         vnp_Command: "pay",
@@ -268,19 +276,20 @@ exports.createOrderAndVNPayUrl = async (req, res) => {
         vnp_Locale: "vn",
         vnp_CurrCode: "VND",
         vnp_TxnRef: orderId,
-        vnp_OrderInfo: `Thanh toán đơn hàng ${orderCode}`,
+        vnp_OrderInfo: "Thanh-toan-" + orderCode,
         vnp_OrderType: "billpayment",
         vnp_Amount: total * 100,
         vnp_ReturnUrl: returnUrl,
+        //  vnp_IpnUrl: ipnUrl,
         vnp_CreateDate: createDate,
-        vnp_IpAddr: req.ip,
+        vnp_IpAddr: ipAddr,
       };
 
       // 2. Sắp xếp key
       vnp_Params = sortObject(vnp_Params);
 
       // 3. Tạo chữ ký SHA512
-      const signData = querystring.stringify(vnp_Params, { encode: false });
+      const signData = querystring.stringify(vnp_Params, { encode: true });
       const hmac = crypto.createHmac("sha512", secretKey);
       const signed = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
       vnp_Params["vnp_SecureHash"] = signed;
@@ -311,5 +320,50 @@ exports.createOrderAndVNPayUrl = async (req, res) => {
       message: "Lỗi tạo order hoặc VNPay URL",
       error: error.message,
     });
+  }
+};
+
+// Khi VNPay gửi kết quả thanh toán về server của bạn
+exports.vnpayIpn = async (req, res) => {
+  try {
+    const vnp_Params = req.query;
+
+    const secureHash = vnp_Params["vnp_SecureHash"];
+    delete vnp_Params["vnp_SecureHash"];
+    delete vnp_Params["vnp_SecureHashType"];
+
+    const secretKey = process.env.VNP_HASHSECRET;
+
+    // Sắp xếp tham số và tạo lại chữ ký
+    const sortedParams = sortObject(vnp_Params);
+    const signData = querystring.stringify(sortedParams, { encode: true });
+    const hmac = crypto.createHmac("sha512", secretKey);
+    const signed = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
+
+    // So sánh chữ ký để xác minh VNPay gửi thật
+    if (secureHash === signed) {
+      const orderId = vnp_Params["vnp_TxnRef"];
+      const responseCode = vnp_Params["vnp_ResponseCode"];
+
+      // Nếu thanh toán thành công
+      if (responseCode === "00") {
+        await Order.findOneAndUpdate(
+          { orderCode: orderId },
+          { status: "paid" }
+        );
+        res.status(200).json({ RspCode: "00", Message: "Success" });
+      } else {
+        await Order.findOneAndUpdate(
+          { orderCode: orderId },
+          { status: "failed" }
+        );
+        res.status(200).json({ RspCode: "00", Message: "Failed" });
+      }
+    } else {
+      res.status(200).json({ RspCode: "97", Message: "Checksum failed" });
+    }
+  } catch (err) {
+    console.error("VNPay IPN error:", err);
+    res.status(500).json({ RspCode: "99", Message: "Error" });
   }
 };

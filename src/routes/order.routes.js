@@ -10,4 +10,6 @@ router.get("/user/:userId", orderController.getOrdersByUser);
 router.post("/orderCode", orderController.getOrderByCode)
 router.put("/status/:id", orderController.updateOrderStatus)
 router.post("/checkout", orderController.createOrderAndVNPayUrl);
+router.get("/vnpay_ipn", orderController.vnpayIpn);
+
 module.exports = router
