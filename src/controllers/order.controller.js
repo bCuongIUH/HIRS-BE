@@ -1,5 +1,8 @@
+require("dotenv").config();
 const Order = require("../models/order.model")
 const Book = require("../models/book.model") // import Book
+const querystring = require("qs");
+const crypto = require("crypto");
 
 // 🧾 Tạo đơn hàng mới
 exports.createOrder = async (req, res) => {
@@ -200,3 +203,113 @@ exports.updateOrderStatus = async (req, res) => {
     })
   }
 }
+
+//
+// Hàm sắp xếp object theo key
+function sortObject(obj) {
+  const sorted = {};
+  const keys = Object.keys(obj).sort();
+  for (const key of keys) {
+    sorted[key] = obj[key];
+  }
+  return sorted;
+}
+
+exports.createOrderAndVNPayUrl = async (req, res) => {
+  try {
+    const dateFormat = (await import("dateformat")).default;
+
+    const { items, shippingAddress, paymentMethod } = req.body;
+
+    // Tính total cho từng item
+    const itemsWithTotal = items.map(item => ({
+      ...item,
+      total: item.price * item.quantity
+    }));
+
+    // Tính subtotal, total
+    const subtotal = itemsWithTotal.reduce((sum, i) => sum + i.total, 0);
+    const shippingFee = 0;
+    const tax = 0;
+    const total = subtotal + shippingFee + tax;
+
+    const orderCode = "ORD-" + Date.now();
+
+    const newOrder = new Order({
+      orderCode,
+      items: itemsWithTotal,
+      shippingAddress,
+      subtotal,
+      shippingFee,
+      tax,
+      total,
+      paymentMethod,
+      status: "pending",
+    });
+
+    await newOrder.save();
+
+    // Nếu thanh toán VNPay
+    if (paymentMethod === "vnpay") {
+      const tmnCode = process.env.VNP_TMNCODE;
+      const secretKey = process.env.VNP_HASHSECRET;
+      const vnpUrl = process.env.VNP_URL;
+      const returnUrl = process.env.VNP_RETURNURL; // Không encode ở đây, encode khi tạo query string
+
+      const date = new Date();
+      const createDate = dateFormat(date, "yyyymmddHHMMss");
+      const orderId = orderCode; // dùng orderCode làm reference
+
+      // 1. Tham số raw để tạo chữ ký
+      let vnp_Params = {
+        vnp_Version: "2.1.0",
+        vnp_Command: "pay",
+        vnp_TmnCode: tmnCode,
+        vnp_Locale: "vn",
+        vnp_CurrCode: "VND",
+        vnp_TxnRef: orderId,
+        vnp_OrderInfo: `Thanh toán đơn hàng ${orderCode}`,
+        vnp_OrderType: "billpayment",
+        vnp_Amount: total * 100,
+        vnp_ReturnUrl: returnUrl,
+        vnp_CreateDate: createDate,
+        vnp_IpAddr: req.ip,
+      };
+
+      // 2. Sắp xếp key
+      vnp_Params = sortObject(vnp_Params);
+
+      // 3. Tạo chữ ký SHA512
+      const signData = querystring.stringify(vnp_Params, { encode: false });
+      const hmac = crypto.createHmac("sha512", secretKey);
+      const signed = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
+      vnp_Params["vnp_SecureHash"] = signed;
+
+      // 4. Tạo URL VNPay
+      const paymentUrl = vnpUrl + "?" + querystring.stringify(vnp_Params, { encode: true });
+
+      return res.status(200).json({
+        code: "00",
+        message: "success",
+        orderId: newOrder._id,
+        paymentUrl,
+      });
+    }
+
+    // Nếu COD hoặc chuyển khoản
+    res.status(200).json({
+      code: "00",
+      message: "Order created successfully",
+      orderId: newOrder._id,
+      total,
+    });
+
+  } catch (error) {
+    console.error("❌ Lỗi tạo order + VNPay URL:", error);
+    res.status(500).json({
+      code: "99",
+      message: "Lỗi tạo order hoặc VNPay URL",
+      error: error.message,
+    });
+  }
+};

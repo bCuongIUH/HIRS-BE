@@ -20,6 +20,8 @@ const warehouseRoutes = require("./src/routes/warehouse.routes");
 const employeesRoutes = require("./src/routes/employees.router");
 const orderRoutes = require("./src/routes/order.routes");
 const promotionRoutes = require("./src/routes/promotionRoutes")
+const paymentRoutes = require("./src/routes/paymentRoutes");
+
 // Cấu hình dotenv
 dotenv.config()
 
@@ -67,6 +69,7 @@ app.use("/api/warehouse", warehouseRoutes);
 app.use("/api/employeesID", employeesRoutes)
 app.use("/api/orders", orderRoutes)
 app.use("/api/promotions", promotionRoutes)
+app.use("/api/payment", paymentRoutes);
 // Route mặc định
 app.get("/", (req, res) => res.send("🩺 HRIS API is running"))
 

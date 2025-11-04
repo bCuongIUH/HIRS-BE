@@ -9,5 +9,5 @@ router.delete("/:id", orderController.deleteOrder)
 router.get("/user/:userId", orderController.getOrdersByUser);
 router.post("/orderCode", orderController.getOrderByCode)
 router.put("/status/:id", orderController.updateOrderStatus)
-
+router.post("/checkout", orderController.createOrderAndVNPayUrl);
 module.exports = router
