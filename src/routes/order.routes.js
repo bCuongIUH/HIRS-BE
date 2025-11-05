@@ -4,12 +4,15 @@ const orderController = require("../controllers/order.controller")
 
 router.post("/", orderController.createOrder)
 router.get("/", orderController.getAllOrders)
-router.get("/:id", orderController.getOrderById)    
-router.delete("/:id", orderController.deleteOrder)
-router.get("/user/:userId", orderController.getOrdersByUser);
+
+// ⚠️ Đặt các route cụ thể lên TRƯỚC route động
+router.get("/vnpay_ipn", orderController.vnpayIpn)
 router.post("/orderCode", orderController.getOrderByCode)
+router.get("/user/:userId", orderController.getOrdersByUser)
 router.put("/status/:id", orderController.updateOrderStatus)
-router.post("/checkout", orderController.createOrderAndVNPayUrl);
-router.get("/vnpay_ipn", orderController.vnpayIpn);
+router.delete("/:id", orderController.deleteOrder)
+router.get("/:id", orderController.getOrderById)
+
+router.post("/checkout", orderController.createOrderAndVNPayUrl)
 
 module.exports = router
