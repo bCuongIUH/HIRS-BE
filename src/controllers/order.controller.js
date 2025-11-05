@@ -117,8 +117,15 @@ exports.getOrdersByUser = async (req, res) => {
       return res.status(400).json({ success: false, message: "Thiếu userId!" });
     }
 
-    // Tìm tất cả đơn hàng của user
-    const orders = await Order.find({ user: userId, isDeleted: false }).sort({ createdAt: -1 });
+   
+    const orders = await Order.find({
+  user: userId,
+  isDeleted: false,
+  $nor: [
+    { status: "pending", paymentMethod: { $in: ["bank_transfer", "vnpay"] } }
+  ]
+}).sort({ createdAt: -1});
+  
 
     res.status(200).json({
       success: true,
@@ -129,6 +136,7 @@ exports.getOrdersByUser = async (req, res) => {
     res.status(500).json({ success: false, message: "Lỗi server", error: error.message });
   }
 };
+
 //lấy đơn hàng theo code
 exports.getOrderByCode = async (req, res) => {
   try {
@@ -355,12 +363,12 @@ exports.vnpayIpn = async (req, res) => {
         return res.status(200).json({ RspCode: "01", Message: "Order not found" });
       }
    // 🔒 Ngăn trừ kho 2 lần
-      if (order.status === "delivered") {
+      if (order.status === "processing") {
         return res.status(200).json({ RspCode: "00", Message: "Already processed" });
       }
       if (responseCode === "00") {
         // ✅ Cập nhật trạng thái đơn
-        order.status = "delivered";
+        order.status = "processing";
         await order.save();
 
         // ✅ Trừ kho
