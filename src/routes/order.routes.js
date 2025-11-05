@@ -7,7 +7,7 @@ router.get("/", orderController.getAllOrders)
 
 // ⚠️ Đặt các route cụ thể lên TRƯỚC route động
 router.get("/vnpay_ipn", orderController.vnpayIpn)
-router.post("/orderCode", orderController.getOrderByCode)
+router.get("/orderCode/:orderCode", orderController.getOrderByCode)
 router.get("/user/:userId", orderController.getOrdersByUser)
 router.put("/status/:id", orderController.updateOrderStatus)
 router.delete("/:id", orderController.deleteOrder)
