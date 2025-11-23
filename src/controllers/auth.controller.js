@@ -48,14 +48,14 @@ exports.login = asyncHandler(async (req, res, next) => {
   // Lấy thông tin nhân viên nếu là nhân viên
   let employeeData = null
   if (user.role === "employee") {
-    const employee = await Employee.findOne({ user: user._id }).populate("department", "name")
+    const employee = await Employee.findOne({ user: user._id })
     if (employee) {
       employeeData = {
         id: employee._id,
         employeeId: employee.employeeId,
         fullName: `${employee.firstName} ${employee.lastName}`,
         position: employee.position,
-        department: employee.department ? employee.department.name : "",
+        // department: employee.department ? employee.department.name : "",
         avatar: employee.avatar,
       }
     }

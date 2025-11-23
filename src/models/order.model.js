@@ -61,6 +61,15 @@ const OrderSchema = new mongoose.Schema(
       enum: ["pending", "processing", "shipping", "delivered", "cancelled","yeu_cau_hoan_tra","paid","completed"],
       default: "pending",
     },
+    // Lịch sử cập nhật trạng thái
+    statusHistory: [
+      {
+        status: { type: String, required: true },
+        updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+         updatedByName: { type: String },
+        updatedAt: { type: Date, default: Date.now },
+      },
+    ],
 
     isDeleted: { type: Boolean, default: false },
   },

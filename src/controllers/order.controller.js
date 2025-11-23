@@ -5,6 +5,8 @@ const querystring = require("qs");
 const crypto = require("crypto");
 const qs = require("qs");
 const dateFormat = require("dateformat"); 
+const userModel = require("../models/user.model");
+const User = require('../models/user.model');
 // 🧾 Tạo đơn hàng mới
 exports.createOrder = async (req, res) => {
   try {
@@ -157,9 +159,70 @@ exports.getOrderByCode = async (req, res) => {
 };
 
 // PUT /api/orders/:id/status
+// exports.updateOrderStatus = async (req, res) => {
+//   try {
+//     const { id } = req.params
+//     // const { userId } = req.body;
+//     const statusFlow = [
+//       "pending",
+//       "processing",
+//       "shipping",
+//       "delivered",
+//       "yeu_cau_hoan_tra",
+//     ]
+
+//     // Lấy đơn hàng
+//     const order = await Order.findById(id)
+//     if (!order) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Không tìm thấy đơn hàng!",
+//       })
+//     }
+
+//     const currentStatus = order.status
+//     const currentIndex = statusFlow.indexOf(currentStatus)
+
+//     if (currentIndex === -1) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Trạng thái đơn hàng không hợp lệ!",
+//       })
+//     }
+
+//     if (currentIndex === statusFlow.length - 1) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Trạng thái đã ở mức cuối cùng, không thể cập nhật!",
+//       })
+//     }
+
+//     // Cập nhật sang trạng thái tiếp theo
+//     const nextStatus = statusFlow[currentIndex + 1]
+//     order.status = nextStatus
+//     await order.save()
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Cập nhật trạng thái thành công!",
+//       status: nextStatus,
+//       order,
+//     })
+//   } catch (err) {
+//     console.error(err)
+//     return res.status(500).json({
+//       success: false,
+//       message: "Lỗi server!",
+//       error: err.message,
+//     })
+//   }
+// }
+
+//
 exports.updateOrderStatus = async (req, res) => {
   try {
-    const { id } = req.params
+    const { id } = req.params;
+    const { userId } = req.body;  // userId từ body hoặc từ token
 
     const statusFlow = [
       "pending",
@@ -167,56 +230,74 @@ exports.updateOrderStatus = async (req, res) => {
       "shipping",
       "delivered",
       "yeu_cau_hoan_tra",
-    ]
+    ];
 
     // Lấy đơn hàng
-    const order = await Order.findById(id)
+    const order = await Order.findById(id);
     if (!order) {
       return res.status(404).json({
         success: false,
         message: "Không tìm thấy đơn hàng!",
-      })
+      });
     }
 
-    const currentStatus = order.status
-    const currentIndex = statusFlow.indexOf(currentStatus)
+    const currentStatus = order.status;
+    const currentIndex = statusFlow.indexOf(currentStatus);
 
     if (currentIndex === -1) {
       return res.status(400).json({
         success: false,
         message: "Trạng thái đơn hàng không hợp lệ!",
-      })
+      });
     }
 
     if (currentIndex === statusFlow.length - 1) {
       return res.status(400).json({
         success: false,
         message: "Trạng thái đã ở mức cuối cùng, không thể cập nhật!",
-      })
+      });
     }
 
-    // Cập nhật sang trạng thái tiếp theo
-    const nextStatus = statusFlow[currentIndex + 1]
-    order.status = nextStatus
-    await order.save()
+    // Lấy thông tin người dùng từ userId
+    const user = await User.findById(userId);  // Tìm người dùng theo userId
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng!",
+      });
+    }
+
+    const userName = user.name || user.email || 'Unknown User';  // Lấy tên người dùng
+
+    // Cập nhật trạng thái
+    const nextStatus = statusFlow[currentIndex + 1];
+    order.status = nextStatus;
+
+    // Lưu thông tin lịch sử cập nhật trạng thái
+    order.statusHistory.push({
+      status: nextStatus,
+      updatedBy: userId,  // Lưu ObjectId của người dùng
+      updatedByName: userName,  // Lưu tên người dùng
+      updatedAt: new Date(),
+    });
+
+    await order.save();
 
     return res.status(200).json({
       success: true,
       message: "Cập nhật trạng thái thành công!",
       status: nextStatus,
       order,
-    })
+    });
   } catch (err) {
-    console.error(err)
+    console.error(err);
     return res.status(500).json({
       success: false,
       message: "Lỗi server!",
       error: err.message,
-    })
+    });
   }
-}
-
-//
+};
 // Hàm sắp xếp object theo key
 function sortObject(obj) {
   const sorted = {};

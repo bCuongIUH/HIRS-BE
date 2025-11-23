@@ -9,6 +9,7 @@ const {
   updateAddress,
   softDeleteAddress,
   getCustomerByUserId,
+  getAllCustomers,
 } = require("../controllers/customer.controller");
 
 router.post("/send-otp", sendOtpForRegistration);      // Bước 1: gửi OTP
@@ -27,4 +28,5 @@ router.put("/update-address", updateAddress)
 router.put("/soft-delete-address", softDeleteAddress)
 //lấy customer theo id của user 
 router.get("/user/:userId", getCustomerByUserId)
+router.get("/", getAllCustomers)
 module.exports = router;

@@ -226,3 +226,30 @@ exports.getCustomerByUserId = async (req, res) => {
     res.status(500).json({ success: false, message: "Lỗi server" })
   }
 }
+// 🔹 Lấy danh sách tất cả khách hàng
+exports.getAllCustomers = asyncHandler(async (req, res, next) => {
+  try {
+    
+    const customers = await Customer.find({ isActive: true })
+
+    if (!customers || customers.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Không có khách hàng nào trong hệ thống",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      count: customers.length,
+      data: customers,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server",
+      error: error.message,
+    });
+  }
+});

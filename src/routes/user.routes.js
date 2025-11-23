@@ -11,7 +11,7 @@ const { protect, authorize } = require("../middleware/auth.middleware")
 // Áp dụng middleware bảo vệ cho tất cả các routes
 router.use(protect)
 // Chỉ admin mới có quyền truy cập
-router.use(authorize("admin"))
+// router.use(authorize("admin"))
 
 router.route("/").get(advancedResults(User), getUsers).post(createUser)
 
