@@ -1,4 +1,5 @@
 const Promotion = require("../models/Promotion")
+const TransactionBook = require("../models/TransactionBook.model")
 const Book = require("../models/book.model")
 const Employee = require("../models/employee.model")
 

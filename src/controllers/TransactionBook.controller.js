@@ -4,17 +4,26 @@ const Book = require('../models/book.model');
 const User = require('../models/user.model')
 
 
-// Lấy danh sách tất cả giao dịch
-exports.getTransactions = async (req, res) => {
+
+// Lấy tất cả giao dịch
+exports.getAllTransactions = async (req, res) => {
   try {
-    const transactions = await TransactionBook.find().populate('book createdBy');
-    return res.status(200).json({
+    // Truy vấn tất cả giao dịch từ cơ sở dữ liệu
+    const transactions = await TransactionBook.find()
+      .populate('book', ' ISSN title author') // populate để lấy thông tin sách (title và author)
+      .sort({ transactionDate: -1 }); // 
+
+    // Trả về kết quả
+    res.status(200).json({
       success: true,
       data: transactions,
     });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ success: false, message: 'Lỗi server', error: err.message });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lấy dữ liệu giao dịch.',
+    });
   }
 };
 

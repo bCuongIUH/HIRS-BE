@@ -1,7 +1,6 @@
-// models/TransactionBook.js
 const mongoose = require('mongoose');
 
-// Schema cho TransactionBook
+
 const transactionBookSchema = new mongoose.Schema({
   book: {
     type: mongoose.Schema.Types.ObjectId,
@@ -10,32 +9,20 @@ const transactionBookSchema = new mongoose.Schema({
   },
   transactionType: {
     type: String,
-    enum: ['ban', 'nhap', 'huy', 'kiem_kho'],  // Các loại giao dịch
+    enum: ['ban', 'nhap', 'huy', 'kiem_kho','khuyen_mai'], 
     required: true,
   },
   quantity: {
     type: Number,
     required: true,
   },
-  price: {
-    type: Number,
-    required: true,
-  },
-  total: {
-    type: Number,
-    required: true,
-  },
+
   transactionDate: {
     type: Date,
     default: Date.now,  // Lưu thời gian giao dịch
   },
   description: {
     type: String,  // Có thể là mô tả cho giao dịch (ví dụ: lý do huỷ, bán...)
-  },
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',  // Người thực hiện giao dịch
-    required: true,
   },
 });
 
