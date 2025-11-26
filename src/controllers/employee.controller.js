@@ -158,7 +158,7 @@ exports.updateEmployee = asyncHandler(async (req, res, next) => {
       employeeId: employee.employeeId,
       name: `${employee.firstName} ${employee.lastName}`,
       position: employee.position,
-      department: employee.department,
+      // department: employee.department,
     },
   })
 

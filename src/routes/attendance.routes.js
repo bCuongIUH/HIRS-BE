@@ -24,23 +24,23 @@ router.post("/clock-in", clockIn)
 router.post("/clock-out", clockOut)
 
 // Routes cho admin
-router.get("/report", authorize("admin", "hr"), getAttendanceReport)
+// router.get("/report", authorize("admin", "hr"), getAttendanceReport)
 
-router.route("/").get(
-  authorize("admin", "hr"),
-  advancedResults(Attendance, [
-    {
-      path: "employee",
-      select: "firstName lastName employeeId position department",
-      populate: {
-        path: "department",
-        select: "name",
-      },
-    },
-  ]),
-  getAttendances,
-)
+// router.route("/").get(
+//   authorize("admin", "hr"),
+//   advancedResults(Attendance, [
+//     {
+//       path: "employee",
+//       select: "firstName lastName employeeId position department",
+//       populate: {
+//         path: "department",
+//         select: "name",
+//       },
+//     },
+//   ]),
+//   getAttendances,
+// )
 
-router.route("/:id").get(getAttendance)
+// router.route("/:id").get(getAttendance)
 
 module.exports = router

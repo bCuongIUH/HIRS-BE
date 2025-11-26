@@ -38,9 +38,9 @@ router.route("/").get(
   advancedResults(Payroll, [
     {
       path: "employee",
-      select: "firstName lastName employeeId position department",
+      select: "firstName lastName employeeId position",
       populate: {
-        path: "department",
+        // path: "department",
         select: "name",
       },
     },
