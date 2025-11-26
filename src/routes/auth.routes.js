@@ -19,6 +19,6 @@ router.get("/me", protect, getMe)
 router.post("/forgotpassword", forgotPassword)
 // router.put("/resetpassword/:resettoken", resetPassword)
 router.put("/updatedetails", protect, updateDetails)
-router.put("/updatepassword", protect, updatePassword)
+router.post("/updatepassword", protect, updatePassword)
 
 module.exports = router
