@@ -2,6 +2,7 @@ const Return = require("../models/ReturnModel");
 const Order = require("../models/order.model");
 const cloudinary = require("../config/cloudinary");
 const ReturnModel = require("../models/ReturnModel");
+const orderModel = require("../models/order.model");
 
 // Tạo yêu cầu hoàn trả
 exports.createReturnRequest = async (req, res) => {
@@ -85,8 +86,7 @@ exports.acceptReturn = async (req, res) => {
     const { userId, userName } = req.body; 
     //   const userId = req.user._id;
     // const userName = req.user.name || 'Unknown User';
-console.log("Body received:", req.body);
-console.log("parr received:", req.params);
+
 
 const STATUS_FLOW = ["pending", "accepted", "checking", "completed", "rejected"];
 
@@ -112,6 +112,14 @@ const STATUS_FLOW = ["pending", "accepted", "checking", "completed", "rejected"]
     });
 
     await returnRequest.save();
+     // Nếu trạng thái yêu cầu hoàn trả là "completed", cập nhật trạng thái đơn hàng thành "paid"
+    if (nextStatus === "completed") {
+      const order = await orderModel.findOne({ _id: id });
+      if (order) {
+        order.status = "paid"; // Cập nhật trạng thái đơn hàng thành "paid"
+        await order.save();
+      }
+    }
     res.json({ success: true, data: returnRequest });
   } catch (err) {
     console.error(err);
@@ -135,8 +143,20 @@ exports.rejectReturn = async (req, res) => {
       updatedBy: userId,
       updatedByName: userName,
     });
+    
 
     await returnRequest.save();
+    // Cập nhật trạng thái đơn hàng gốc sang "cancelled"
+    const order = await orderModel.findById(returnRequest.orderId);
+    if (order) {
+      order.status = "cancelled";
+      order.statusHistory.push({
+        status: "cancelled",
+        updatedBy: userId,
+        updatedByName: userName,
+      });
+      await order.save();
+    }
     res.json({ success: true, data: returnRequest });
   } catch (err) {
     console.error(err);
