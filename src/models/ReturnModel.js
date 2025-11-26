@@ -5,6 +5,10 @@ const returnRequestSchema = new mongoose.Schema(
         orderId: { type: mongoose.Schema.Types.ObjectId, ref: "Order", required: true },
         requestedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },// người dùng
         reason: { type: String, required: true },
+        description: { 
+            type: String, 
+            default: "" 
+        },  // Mô tả chi tiết lý do (nếu có)
         images: [{ type: String }],
         status: {
             type: String,

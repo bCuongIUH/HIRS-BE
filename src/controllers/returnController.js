@@ -10,7 +10,7 @@ exports.createReturnRequest = async (req, res) => {
     console.log("req.body:", req.body);
     console.log("req.file:", req.file);
 
-    const { orderId, requestedBy, reason } = req.body;
+    const { orderId, requestedBy, reason ,description} = req.body;
     if (!orderId || !requestedBy || !reason) {
       return res.status(400).json({ success: false, message: "Thiếu thông tin yêu cầu" });
     }
@@ -28,10 +28,12 @@ exports.createReturnRequest = async (req, res) => {
       orderId,
       requestedBy,
       reason,
+      description,
       images: imageUrl,
       status: "pending",
     });
-
+    await Order.findByIdAndUpdate(orderId, { status: "yeu_cau_hoan_tra" });
+    
     res.status(201).json({ success: true, data: newReturn });
   } catch (err) {
     console.error("Error in createReturnRequest:", err);
