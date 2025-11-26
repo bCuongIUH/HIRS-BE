@@ -120,6 +120,7 @@ exports.deleteOrder = async (req, res) => {
   }
 }
 //lấy đơn hàng theo user
+//lấy đơn hàng theo user
 exports.getOrdersByUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -127,7 +128,15 @@ exports.getOrdersByUser = async (req, res) => {
       return res.status(400).json({ success: false, message: "Thiếu userId!" });
     }
 
-   
+
+    const orders = await Order.find({
+  user: userId,
+  isDeleted: false,
+  $nor: [
+    { status: "pending", paymentMethod: { $in: ["bank_transfer", "vnpay"] } }
+  ]
+}).sort({ createdAt: -1});
+  
 
 
     res.status(200).json({
@@ -139,7 +148,6 @@ exports.getOrdersByUser = async (req, res) => {
     res.status(500).json({ success: false, message: "Lỗi server", error: error.message });
   }
 };
-
 //lấy đơn hàng theo code
 exports.getOrderByCode = async (req, res) => {
   try {
@@ -223,7 +231,7 @@ exports.getOrderByCode = async (req, res) => {
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.body;  // userId từ body hoặc từ token
+    const { userId } = req.body; 
 
     const statusFlow = [
       "pending",

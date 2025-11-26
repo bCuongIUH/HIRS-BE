@@ -23,6 +23,7 @@ const promotionRoutes = require("./src/routes/promotionRoutes")
 const paymentRoutes = require("./src/routes/paymentRoutes");
 const statisticsRoutes = require("./src/routes/statistics.router");
 const TransactionBookRoutes = require("./src/routes/transactionBook.routes")
+const returnRoutes = require("./src/routes/returnRoutes")
 // Cấu hình dotenv
 dotenv.config()
 
@@ -39,6 +40,7 @@ app.use(
     credentials: true, // Cho phép gửi cookie qua CORS
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+  
   }),
 )
  
@@ -73,6 +75,7 @@ app.use("/api/promotions", promotionRoutes)
 app.use("/api/payment", paymentRoutes);
 app.use("/api/statistics", statisticsRoutes);
 app.use("/api/transactionBook",TransactionBookRoutes)
+app.use("/api/returns", returnRoutes);
 
 // Route mặc định
 app.get("/", (req, res) => res.send("🩺 HRIS API is running"))
