@@ -39,7 +39,7 @@ const OrderSchema = new mongoose.Schema(
       ward: { type: String, required: true },
       district: { type: String, required: true },
       city: { type: String, required: true },
-      notes: { type: String },
+      notes: { type: String , default :"Không"},
     },
 
     // Thanh toán & tổng tiền
@@ -70,7 +70,7 @@ const OrderSchema = new mongoose.Schema(
         updatedAt: { type: Date, default: Date.now },
       },
     ],
-
+ 
     isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }

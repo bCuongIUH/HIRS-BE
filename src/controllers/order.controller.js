@@ -20,7 +20,8 @@ exports.createOrder = async (req, res) => {
       shippingFee,
       tax,
       total,
-      paymentMethod,
+      paymentMethod
+   
     } = req.body
     console.log("📦 Dữ liệu nhận từ FE:", req.body) 
 
@@ -53,6 +54,7 @@ exports.createOrder = async (req, res) => {
       tax,
       total,
       paymentMethod,
+     
     })
 
     // 🔥 Trừ stock của từng sách
