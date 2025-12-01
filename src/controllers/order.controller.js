@@ -7,6 +7,7 @@ const qs = require("qs");
 const dateFormat = require("dateformat"); 
 const userModel = require("../models/user.model");
 const User = require('../models/user.model');
+const bookModel = require("../models/book.model");
 // 🧾 Tạo đơn hàng mới
 exports.createOrder = async (req, res) => {
   try {
@@ -166,7 +167,7 @@ exports.getOrderByCode = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
+// cập nhật trạng thái đơn theo lần lượt
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -246,6 +247,80 @@ exports.updateOrderStatus = async (req, res) => {
     });
   }
 };
+//từ chối
+exports.rejectOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.body;
+
+    // Lấy đơn hàng
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy đơn hàng!",
+      });
+    }
+
+    // Chỉ cho phép từ chối khi đang ở trạng thái pending
+    if (order.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        message: "Chỉ có thể từ chối đơn hàng ở trạng thái 'pending'!",
+      });
+    }
+
+    // Lấy thông tin người dùng
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng!",
+      });
+    }
+
+    const userName = user.name || user.email || "Unknown User";
+  
+// Hoàn lại số lượng vào kho
+    for (const item of order.items) {
+      const book = await bookModel.findById(item.productId);
+      if (book) {
+        book.stock += item.quantity;  
+        await book.save();
+      }
+    }
+
+
+    // Cập nhật trạng thái
+    order.status = "tuchoi";
+
+    // Ghi vào lịch sử trạng thái
+    order.statusHistory.push({
+      status: "tuchoi",
+      updatedBy: userId,
+      updatedByName: userName,
+      updatedAt: new Date(),
+    });
+
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Đơn hàng đã bị từ chối!",
+      status: "tuchoi",
+      order,
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi server!",
+      error: err.message,
+    });
+  }
+};
+
 // Hàm sắp xếp object theo key
 function sortObject(obj) {
   const sorted = {};
@@ -255,6 +330,7 @@ function sortObject(obj) {
   }
   return sorted;
 }
+
 
 
 // Khi VNPay gửi kết quả thanh toán về server của bạn
