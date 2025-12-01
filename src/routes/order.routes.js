@@ -11,6 +11,7 @@ router.get("/orderCode/:orderCode", orderController.getOrderByCode)
 router.get("/user/:userId", orderController.getOrdersByUser)
 router.put("/status/:id", orderController.updateOrderStatus)
 router.put("/status/rejectOrder/:id", orderController.rejectOrder)
+router.put("/status/cancelOrder/:id", orderController.cancelOrder)
 router.delete("/:id", orderController.deleteOrder)
 router.get("/:id", orderController.getOrderById)
 
