@@ -40,7 +40,10 @@ exports.login = asyncHandler(async (req, res, next) => {
   if (!isMatch) {
     return next(new ErrorResponse("Thông tin đăng nhập không hợp lệ", 401))
   }
-
+ // Kiểm tra trạng thái isDelete
+  if (user.isDelete === "true") {
+    return next(new ErrorResponse("Tài khoản của bạn đã bị xóa.", 401));
+  }
   // Cập nhật thời gian đăng nhập cuối
   user.lastLogin = Date.now()
   await user.save({ validateBeforeSave: false })

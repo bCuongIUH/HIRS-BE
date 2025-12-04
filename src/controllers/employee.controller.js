@@ -177,23 +177,24 @@ exports.deleteEmployee = asyncHandler(async (req, res, next) => {
   if (!employee) {
     return next(new ErrorResponse(`Không tìm thấy nhân viên với ID: ${req.params.id}`, 404))
   }
-    // ✅ Không cho quản lý xóa admin hoặc quản lý khác
   if (req.user.role === "admin" && ["admin", "manager"].includes(employee.role)) {
     return next(
       new ErrorResponse("Bạn không có quyền cho nghỉ việc người có vai trò quản lý hoặc admin", 403)
     )
   }
-
-  // Nếu nhân viên đã nghỉ việc thì không cần cập nhật nữa
   if (employee.status === "nghi_viec") {
     return next(new ErrorResponse("Nhân viên này đã nghỉ việc trước đó", 400))
   }
-
-  // ✅ Chuyển trạng thái sang nghỉ việc thay vì xóa
   employee.employmentStatus = "nghi_viec"
+  employee.status = "nghi_viec";  
   await employee.save()
 
-  // ✅ Ghi lại transaction (nhật ký)
+ 
+  const user = await User.findOne({ _id: employee.user });
+  if (user) {
+    user.isDelete = "true"; 
+    await user.save();
+  }
   await Transaction.create({
     user: req.user.id,
     action: "update",
@@ -214,6 +215,7 @@ exports.deleteEmployee = asyncHandler(async (req, res, next) => {
     data: employee,
   })
 })
+
 
 // Lấy thông tin nhân viên theo userId
 exports.getEmployeeByUserId = async (req, res) => {
