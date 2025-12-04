@@ -258,3 +258,63 @@ exports.getStatistics = async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
+
+//
+exports.getTopProducts = async (req, res) => {
+  try {
+    // 🔍 Lấy đơn hàng đã giao (và chưa xóa) + populate user
+    const orders = await Order.find({
+      status: "delivered",
+      isDeleted: false,
+    }).populate("user", "name email phone gender isActive address");
+
+    if (!orders.length) {
+      return res.status(200).json({
+        message: "Không có đơn hàng nào",
+        topProducts: [],
+      });
+    }
+
+    // 🔥 Thống kê sản phẩm bán chạy
+    const productSales = {};
+    for (const order of orders) {
+      for (const item of order.items) {
+        // Tìm sản phẩm tương ứng từ productId và populate category
+        const product = await Product.findById(item.productId).populate("category", "name");  // Populate category
+
+        if (product) {
+          const ISSN = product.ISSN || "Không có ISSN"; // Lấy ISSN từ sản phẩm, nếu có
+          const categoryName = product.category?.name || "Không có danh mục"; // Lấy tên danh mục
+           const author = product.author || "Không có tác giả";
+          if (!productSales[item.productId]) {
+            productSales[item.productId] = {
+              title: item.title,
+              productId: item.productId,
+              image: item.image,
+              ISSN: ISSN, 
+                author: author,
+              category: categoryName,
+              totalQuantity: 0,
+              totalRevenue: 0,
+            };
+          }
+          productSales[item.productId].totalQuantity += item.quantity;
+          productSales[item.productId].totalRevenue += item.total;
+        }
+      }
+    }
+
+    // 🏆 Top sản phẩm bán chạy
+    const topProducts = Object.values(productSales)
+      .sort((a, b) => b.totalQuantity - a.totalQuantity)  // Sắp xếp theo tổng số lượng bán
+      .slice(0, 10);  // Chỉ lấy top 10 sản phẩm bán chạy nhất
+
+    // ✅ Trả dữ liệu về frontend
+    res.status(200).json({
+      topProducts,
+    });
+  } catch (error) {
+    console.error("Lỗi khi lấy sản phẩm bán chạy:", error);
+    res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};
